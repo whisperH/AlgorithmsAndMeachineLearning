@@ -27,8 +27,13 @@ def getData():
     return dataset, features_info, label_names, target
 
 def getWaterMelonData():
-    dataset = pd.read_csv('./data/WaterMelonDataset3.csv')
+
+    dataset = pd.read_csv(
+        './data/WaterMelonDataset3.csv',
+        index_col='编号'
+    )
     # dataset = dataset[1: ]
+
     features_info = {
         '色泽': 'dispersed',
         '根蒂': 'dispersed',
