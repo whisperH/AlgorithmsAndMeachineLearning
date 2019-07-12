@@ -59,6 +59,19 @@ def getTrainTestData(dataset):
     test_data = dataset.loc[test_data_index]
     return train_data, test_data
 
+class DecisionTreeNode(object):
+    def __init__(self):
+        # 存储当前节点训练的数据集
+        self.dataset = None
+        # 存储当前节点对应数据集中数量最多的标签，后剪枝时可调用
+        self.max_label = None
+        # 存储当前节点划分的特征名称
+        self.node_name = None
+        # 存储当前节点的划分结果
+        self.next = {}
+        # 存储当前节点信息熵等的计算结果
+        self.Ent = None
+
 class DecisionTree(object):
     def __init__(self, dataset, feature_names, label_name):
         '''
@@ -72,6 +85,7 @@ class DecisionTree(object):
         # 计算特征与标签的所有特征值
         self.unique_value = {}
         self.getUniqueValue(dataset)
+        self.root = DecisionTreeNode()
 
     def getUniqueValue(self, dataset):
         '''
@@ -144,19 +158,19 @@ class DecisionTree(object):
         '''
         对数据进行预测
         :param test_data: 待预测的数据
-        :param node: 决策树，若非字典形式，则说明node是分类标签
+        :param node: 决策树，若非DecisionTreeNode形式，则说明node是分类标签
         :return: 预测结果
         '''
         # 按照测数据集遍历决策树，如果当前节点是字典，则说明未到叶子节点
-        while type(node).__name__ == 'dict':
+        while type(node).__name__ == 'DecisionTreeNode':
             # 从决策树中取出特征
-            feature = list(node.keys())[0]
+            feature = node.node_name
             # 如果测试数据中有该特征
             if feature in data:
                 # 先从测试数据中取出对应的特征值，再在决策树中找相应的子树
-                node = node[feature][data[feature]]
+                node = node.next[data[feature]]
             else:
-                print('数据缺失')
+                node = node.next[self.label_name]
         return node
 
     def accurate(self, dataset, tree_root):
@@ -178,126 +192,168 @@ class DecisionTree(object):
                 right_count += 1
         return right_count / len(data_index), right_count
 
-################################创建决策树############################################
-
-    # def createDecisionTree(self, dataset, feature_names, method='gain'):
-    #     '''
-    #     构造决策树
-    #     :param dataset: 构造树需要用到的数据集
-    #     :param features_name: 构造树需要用到的特征名称
-    #     :param method: 判定最优特征的方法
-    #     :return: 当前生成的子树节点
-    #     '''
-    #     # 选出当前数据集中所有类的取值
-    #     label_values = list(dataset[self.label_name].unique())
-    #     # 选出当前数据集中最多的类
-    #     max_label = self.getMaxNumLabel(dataset, label_values)
-    #
-    #     # 如果数据集中的类标签只有一种，则返回该标签
-    #     if len(label_values) == 1:
-    #         # return {self.label_name: {max_label}}
-    #         return max_label
-    #     # 如果待分类的特征为空 或者 检查数据集中的特征种类是否为1（数据集中所有特征都相同）
-    #     elif len(feature_names) == 0 or dataset.drop_duplicates(subset=feature_names, keep=False).empty:
-    #         # 选取当前数据集中最多的标签作为该类标签
-    #         # return {self.label_name: {max_label}}
-    #         return max_label
-    #
-    #     # 选出最佳的分类特征
-    #     classify_feature = self.classifyMethod(dataset, feature_names, method=method)
-    #     # 初始化节点
-    #     DTree = {classify_feature: {}}
-    #
-    #     # feature_values = list(dataset[classify_feature].unique())
-    #     feature_values = self.unique_value[classify_feature]
-    #     # 对数据集进行分类
-    #     for feature_value in feature_values:
-    #         sub_dataset = dataset[dataset[classify_feature] == feature_value]
-    #         # print('划分节点:', classify_feature)
-    #         # print('划分特征:', feature_value)
-    #         # print('子数据集')
-    #         # print(sub_dataset)
-    #         # print('=========================')
-    #         # 如果数据集为空
-    #         if sub_dataset.shape[0] == 0:
-    #             # DTree[classify_feature][feature_value] = {self.label_name: {max_label}}
-    #             DTree[classify_feature][feature_value] = max_label
-    #         else:
-    #             # 将特征复制一份，传递给子数据集
-    #             sub_feature_names = feature_names.copy()
-    #             sub_feature_names.remove(classify_feature)
-    #
-    #             DTree[classify_feature][feature_value] = self.createDecisionTree(
-    #                 sub_dataset, sub_feature_names, method=method
-    #             )
-    #     return DTree
-
-
-################################创建枝决策树######################################
     def isPrune(
-            self, max_label, feature_values,
-            classify_feature, label_values,
-            train_dataset, test_dataset
+            self, prune_tree, unprune_tree, test_dataset
     ):
         '''
         判断子树特征是否要剪枝
-        :param max_label: 当前数据集中数量最多的标签，模拟剪枝后，该节点赋予的标签
-        :param feature_values: 当前数据集中的特征值种类
-        :param classify_feature: 最佳特征，也是是否剪枝的对象
-        :param label_values: 数据标签取值的种类
-        :param train_dataset: 当前的训练数据子集
+        :param prune_tree: 剪枝后的决策树
+        :param unprune_tree: 未剪枝的决策树
         :param test_dataset:  测试数据集
         :return: 是否剪枝的标志
         '''
         # 不对特征划分时测试集的正确率与正确的数目
         prune_acc, prune_right_count = self.accurate(
             test_dataset,
-            max_label
+            prune_tree
         )
-        # print('剪枝后的正确率：', prune_right_count)
+        print('剪枝后的正确率：', prune_acc)
 
-        # 针对划分节点生成决策树
-        unprune_tree = {classify_feature: {}}
-
-        for feature_value in feature_values:
-            sub_dataset = train_dataset[train_dataset[classify_feature] == feature_value]
-            # 选出当前子数据集中最多的类
-            sub_max_label = self.getMaxNumLabel(sub_dataset, label_values)
-            unprune_tree[classify_feature][feature_value] = sub_max_label
-        # print("生成的子树")
-        # createPlot(unprune_tree)
 
         # 不对特征划分时测试集的正确率与正确的数目
         unprune_acc, unprune_right_count = self.accurate(
             test_dataset,
             unprune_tree
         )
-        # print('未剪枝的正确率：', unprune_right_count)
+        print('未剪枝的正确率：', unprune_acc)
 
-        if prune_acc >= unprune_acc:
+        if prune_acc > unprune_acc:
             return True
         else:
             return False
 
+    def postPureTree(self, node, test_dataset):
+        '''
+        后剪枝功能
+        :param node: 当前节点
+        :param test_dataset: 测试数据
+        :return: 返回后剪枝的结果
+        '''
+        if type(node).__name__ != 'DecisionTreeNode':
+            return node
+        else:
+            feature_values = node.next
+            for ivalue, iname in feature_values.items():
+                if type(iname).__name__ == 'DecisionTreeNode':
+                    node.next[ivalue] = self.postPureTree(iname, test_dataset)
+
+            print('是否后剪枝？', node.node_name)
+            # 针对划分节点生成剪枝的决策树桩
+            prune_tree = DecisionTreeNode()
+            prune_tree.node_name = 'AllData'
+            prune_tree.next[self.label_name] = node.max_label
+
+            if self.isPrune(prune_tree, node, test_dataset):
+                print('剪枝')
+                return node.max_label
+            else:
+                print('保留')
+                return node
+
+################################创建枝决策树##########################################
     def createDecisionTree(
-            self, train_dataset, test_dataset,
-            feature_names, method='gain', prune=None
+            self, feature_names, train_dataset,
+            test_dataset=None, method='gain', prune=None
     ):
         '''
+        构建决策树
+        :param feature_names: 构造树需要用到的特征名称
         :param train_dataset: 构造树需要用到的训练数据集
         :param test_dataset: 构造树需要用到的测试数据集
-        :param feature_names: 构造树需要用到的特征名称
         :param method: 判定最优特征的方法
         :param prune: 决策树是否需要进行剪枝操作<PrePrune，PostPrune>
         :return: 当前生成的子树节点
         '''
-        # print("当前训练的数据")
-        # print(train_dataset)
+        if prune is None:
+            self.root = self.__createDecisionTree__(train_dataset, feature_names, method=method)
+        elif prune == 'PrePrune':
+            assert test_dataset is not None, "test dataset is required!"
+            self.root = self.__createPrePruneDecisionTree__(train_dataset, test_dataset, feature_names, method=method)
+        else:
+            assert test_dataset is not None, "test dataset is required!"
+            self.root = self.__createPostPruneDecisionTree__(train_dataset, test_dataset, feature_names, method=method)
+
+    ###############################创建决策树############################
+    def __createDecisionTree__(self, dataset, feature_names, method):
+        '''
+        构造决策树
+        :param dataset: 构造树需要用到的数据集
+        :param features_name: 构造树需要用到的特征名称
+        :param method: 判定最优特征的方法
+        :return: 当前生成的子树节点
+        '''
+        # 初始化节点
+        new_node = DecisionTreeNode()
+        # 存储当前节点训练的数据集
+        new_node.dataset = dataset
+
+        # 选出当前数据集中所有类的取值
+        label_values = list(dataset[self.label_name].unique())
+        # 选出当前数据集中最多的类
+        max_label = self.getMaxNumLabel(dataset, label_values)
+
+        # 存储当前节点对应数据集中数量最多的标签
+        new_node.max_label = max_label
+
+        # 如果数据集中的类标签只有一种，则返回该标签
+        if len(label_values) == 1:
+            # return {self.label_name: {max_label}}
+            return max_label
+        # 如果待分类的特征为空 或者 检查数据集中的特征种类是否为1（数据集中所有特征都相同）
+        elif len(feature_names) == 0 or dataset.drop_duplicates(subset=feature_names, keep=False).empty:
+            # 选取当前数据集中最多的标签作为该类标签
+            # return {self.label_name: {max_label}}
+            return max_label
+
+        # 选出最佳的分类特征
+        classify_feature = self.classifyMethod(dataset, feature_names, method=method)
+
+        # 存储当前节点划分的特征名称
+        new_node.node_name = classify_feature
+        new_node.next = {}
+
+        # feature_values = list(dataset[classify_feature].unique())
+        feature_values = self.unique_value[classify_feature]
+        # 对数据集进行分类
+        for feature_value in feature_values:
+            sub_dataset = dataset[dataset[classify_feature] == feature_value]
+
+            # 如果数据集为空
+            if sub_dataset.shape[0] == 0:
+                # DTree[classify_feature][feature_value] = {self.label_name: {max_label}}
+                new_node.next[feature_value] = max_label
+            else:
+                # 将特征复制一份，传递给子数据集
+                sub_feature_names = feature_names.copy()
+                sub_feature_names.remove(classify_feature)
+
+                new_node.next[feature_value] = self.__createDecisionTree__(
+                    sub_dataset, sub_feature_names, method=method
+                )
+        return new_node
+
+    ##############################创建枝决策树###########################
+    def __createPrePruneDecisionTree__(self, train_dataset, test_dataset, feature_names, method):
+        '''
+        :param feature_names: 构造树需要用到的特征名称
+        :param train_dataset: 构造树需要用到的训练数据集
+        :param test_dataset: 构造树需要用到的测试数据集
+        :param method: 判定最优特征的方法
+        :param prune: 决策树是否需要进行剪枝操作<PrePrune，PostPrune>
+        :return: 当前生成的子树节点
+        '''
+
+        new_node = DecisionTreeNode()
+        # 存储当前节点训练的数据集
+        new_node.dataset = train_dataset
+
         # 选出当前数据集中所有类的取值
         label_values = list(train_dataset[self.label_name].unique())
-
         # 选出当前数据集中最多的类
         max_label = self.getMaxNumLabel(train_dataset, label_values)
+
+        # 存储当前节点对应数据集中数量最多的标签
+        new_node.max_label = max_label
 
         # 如果当前数据集中只包含一种类
         if len(label_values) == 1:
@@ -311,38 +367,68 @@ class DecisionTree(object):
             classify_feature = self.classifyMethod(train_dataset, feature_names, method=method)
             feature_values = self.unique_value[classify_feature]
 
-            # 是否开启剪枝？
+            ################# 是否开启预剪枝？################
             # 如果是PrePrune，则代表预剪枝
-            if prune == 'PrePrune':
-                print('是否剪枝？', classify_feature)
-                if self.isPrune(
-                        max_label, feature_values, classify_feature,
-                        label_values, train_dataset, test_dataset
-                ):
-                    print('剪枝')
-                    return max_label
-                else:
-                    print('保留')
+            print('是否剪枝？', classify_feature)
 
-            # 初始化节点
-            DTree = {classify_feature: {}}
-            # 对数据集进行分类
+            # 针对划分节点生成决策树桩
+            unprune_tree = DecisionTreeNode()
+            unprune_tree.node_name = classify_feature
+            unprune_tree.next = {}
             for feature_value in feature_values:
                 sub_dataset = train_dataset[train_dataset[classify_feature] == feature_value]
-                # 如果数据集为空
-                if sub_dataset.shape[0] == 0:
-                    DTree[classify_feature][feature_value] = max_label
-                else:
-                    # 将特征复制一份，传递给子数据集
-                    sub_feature_names = feature_names.copy()
-                    sub_feature_names.remove(classify_feature)
-                    print(classify_feature, ':', feature_value)
-                    DTree[classify_feature][feature_value] = self.createDecisionTree(
-                        sub_dataset, test_dataset,
-                        sub_feature_names, method=method, prune=prune
-                    )
-            return DTree
+                # 选出当前子数据集中最多的类
+                sub_max_label = self.getMaxNumLabel(sub_dataset, label_values)
+                unprune_tree.next[feature_value] = sub_max_label
 
+            # 针对划分节点生成剪枝的决策树桩
+            prune_tree = DecisionTreeNode()
+            prune_tree.node_name = 'AllData'
+            prune_tree.next[self.label_name] = max_label
+
+            if self.isPrune(prune_tree, unprune_tree, test_dataset):
+                print('剪枝')
+                return max_label
+            else:
+                print('保留')
+
+                ################## 开始构建基础决策树 ################
+                new_node.node_name = classify_feature
+                new_node.next = {}
+                # 对数据集进行分类
+                for feature_value in feature_values:
+                    sub_dataset = train_dataset[train_dataset[classify_feature] == feature_value]
+                    # 如果数据集为空
+                    if sub_dataset.shape[0] == 0:
+                        new_node.next[feature_value] = max_label
+                    else:
+                        # 将特征复制一份，传递给子数据集
+                        sub_feature_names = feature_names.copy()
+                        sub_feature_names.remove(classify_feature)
+                        print(classify_feature, ':', feature_value)
+                        new_node.next[feature_value] = self.__createPrePruneDecisionTree__(
+                            sub_dataset, test_dataset,
+                            sub_feature_names, method=method
+                        )
+            return new_node
+
+    #############################创建后剪枝决策树########################
+    def __createPostPruneDecisionTree__(self, train_dataset, test_dataset, feature_names, method):
+        '''
+        :param feature_names: 构造树需要用到的特征名称
+        :param train_dataset: 构造树需要用到的训练数据集
+        :param test_dataset: 构造树需要用到的测试数据集
+        :param method: 判定最优特征的方法
+        :param prune: 决策树是否需要进行剪枝操作<PrePrune，PostPrune>
+        :return: 当前生成的子树节点
+        '''
+        # 首先构建基本决策树
+        self.root = self.__createDecisionTree__(train_dataset, feature_names, method=method)
+        createPlot(self.root)
+        # 开启后剪枝功能
+        node = self.root
+        self.root = self.postPureTree(node, test_dataset)
+        return self.root
 
 def calculateEnt(dataset, label_name):
     '''
@@ -441,19 +527,20 @@ if __name__ == '__main__':
     # # 构建基础决策树
     # dataset, feature_names, label_names, features_info = getWaterMelonData(2)
     # DTObject = DecisionTree(dataset, feature_names, label_names)
-    # # DTObject.classifyMethod(dataset, feature_names, 'gain')
-    # DTObject.root = DTObject.createDecisionTree(dataset, None, feature_names, 'gain')
-    # print(DTObject.root)
+    # DTObject.createDecisionTree(feature_names, dataset, None, 'gain')
     # createPlot(DTObject.root)
 
     # 构建剪枝决策树
     dataset1, feature_names1, label_names1, features_info = getWaterMelonData(3)
     train_dataset, test_dataset = getTrainTestData(dataset1)
     DTObject = DecisionTree(train_dataset, feature_names1, label_names1)
-    DTObject.root = DTObject.createDecisionTree(
-        train_dataset, test_dataset,
-        feature_names1, method='gain', prune=None
+
+    DTObject.createDecisionTree(
+        feature_names1, train_dataset, test_dataset,
+        method='gain', prune='PostPrune'
     )
-    # DTObject.predict(test_dataset, DTObject.root)
     # print(DTObject.root)
+    #
+    #
     createPlot(DTObject.root)
+

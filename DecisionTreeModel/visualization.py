@@ -10,10 +10,9 @@ arrow_args = dict(arrowstyle="<-")
 # 这是递归计算树的叶子节点个数，比较简单
 def getNumLeafs(myTree):
     numLeafs = 0
-    firstStr = list(myTree.keys())[0]
-    secondDict = myTree[firstStr]
+    secondDict = myTree.next
     for key in secondDict.keys():
-        if type(secondDict[key]).__name__ == 'dict':  # test to see if the nodes are dictonaires, if not they are leaf nodes
+        if type(secondDict[key]).__name__ == 'DecisionTreeNode':  # test to see if the nodes are dictonaires, if not they are leaf nodes
             numLeafs += getNumLeafs(secondDict[key])
         else:
             numLeafs += 1
@@ -23,10 +22,9 @@ def getNumLeafs(myTree):
 # 这是递归计算树的深度，比较简单
 def getTreeDepth(myTree):
     maxDepth = 0
-    firstStr = list(myTree.keys())[0]
-    secondDict = myTree[firstStr]
+    secondDict = myTree.next
     for key in secondDict.keys():
-        if type(secondDict[key]).__name__ == 'dict':  # test to see if the nodes are dictonaires, if not they are leaf nodes
+        if type(secondDict[key]).__name__ == 'DecisionTreeNode':  # test to see if the nodes are dictonaires, if not they are leaf nodes
             thisDepth = 1 + getTreeDepth(secondDict[key])
         else:
             thisDepth = 1
@@ -61,16 +59,15 @@ def retrieveTree(i):
 # 重点，递归，决定整个树图的绘制，难（自己认为）
 def plotTree(myTree, parentPt, nodeTxt):  # if the first key tells you what feat was split on
     numLeafs = getNumLeafs(myTree)  # this determines the x width of this tree
-    depth = getTreeDepth(myTree)
-    firstStr = list(myTree.keys())[0]  # the text label for this node should be this
+    firstStr = myTree.node_name  # the text label for this node should be this
     cntrPt = (plotTree.xOff + (1.0 + float(numLeafs)) / 2.0 / plotTree.totalW, plotTree.yOff)
 
     plotMidText(cntrPt, parentPt, nodeTxt)
     plotNode(firstStr, cntrPt, parentPt, decisionNode)
-    secondDict = myTree[firstStr]
+    secondDict = myTree.next
     plotTree.yOff = plotTree.yOff - 1.0 / plotTree.totalD
     for key in secondDict.keys():
-        if type(secondDict[key]).__name__ == 'dict':  # test to see if the nodes are dictonaires, if not they are leaf nodes
+        if type(secondDict[key]).__name__ == 'DecisionTreeNode':  # test to see if the nodes are dictonaires, if not they are leaf nodes
             plotTree(secondDict[key], cntrPt, str(key))  # recursion
         else:  # it's a leaf node print the leaf node
             plotTree.xOff = plotTree.xOff + 1.0 / plotTree.totalW

@@ -50,11 +50,11 @@ def plotMidText(cntrPt, parentPt, txtString):
 # 这个是用来创建数据集即决策树
 def retrieveTree(i):
     listOfTrees = [
-        {'no surfacing': {0: {'flippers': {0: 'no', 1: 'yes'}}, 1: {'flippers': {0: 'no', 1: 'yes'}},
-                                     2: {'flippers': {0: 'no', 1: 'yes'}}}},
+        {'好瓜': {'': '否'}},
         {'no surfacing': {0: 'no', 1: {'flippers': {0: {'head': {0: 'no', 1: 'yes'}}, 1: 'no'}}}},
-        {'纹理': {'清晰': {'根蒂': {'硬挺': '否', '稍蜷': {'色泽': {'乌黑': {'触感': {'硬滑': '是', '软粘': '否'}}, '青绿': '是'}}, '蜷缩': '是'}},
-                '模糊': '否', '稍糊': {'触感': {'硬滑': '否', '软粘': '是'}}}}
+        {'纹理': {'清晰': {
+            '根蒂': {'硬挺': {'好瓜': {'': '否'}}, '蜷缩': '是', '稍蜷': {'色泽': {'青绿': '是', '乌黑': {'触感': {'硬滑': '是', '软粘': '否'}}, '浅白': '是'}}}},
+                '稍糊': {'触感': {'硬滑': '否', '软粘': '是'}}, '模糊': '否'}}
     ]
     return listOfTrees[i]
 
@@ -85,7 +85,6 @@ def plotTree(myTree, parentPt, nodeTxt):  # if the first key tells you what feat
 def createPlot(inTree):
     fig = plt.figure(1, facecolor='white')
     fig.clf()
-    a = 'dddd'
     axprops = dict(xticks=[], yticks=[])
     createPlot.ax1 = plt.subplot(111, frameon=False)  # no ticks
     plotTree.totalW = float(getNumLeafs(inTree))
@@ -95,7 +94,7 @@ def createPlot(inTree):
     plotTree(inTree, (0.5, 1.0), '')
     plt.show()
 
-createPlot(retrieveTree(2))
+createPlot(retrieveTree(0))
 
 ######################################################################################
 
