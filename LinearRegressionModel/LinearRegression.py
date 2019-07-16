@@ -67,6 +67,14 @@ class Regression(object):
             self.ws = denom.I * (x_matrix.T * y_matrix)
 
     def stageWiseFit(self, x_data, y_data, epsilon=0.01, iterations=200):
+        '''
+        计算前向逐步回归的参数
+        :param x_data: 训练数据集
+        :param y_data: 训练数据的输出值
+        :param epsilon: 步长
+        :param iterations: 迭代次数
+        :return: 返回每一次迭代过程中的权重大小
+        '''
         x_matrix = np.matrix(x_data)
         y_matrix = np.matrix(y_data)
 
@@ -107,7 +115,13 @@ class Regression(object):
         x_matrix = np.mat(x_data.values)
         return x_matrix * self.ws
 
-def rssError(yArr,yHatArr): #yArr and yHatArr both need to be arrays
+def rssError(yArr, yHatArr): #yArr and yHatArr both need to be arrays
+    '''
+    计算mse
+    :param yArr: y的真实值
+    :param yHatArr: y的模拟值
+    :return: mse
+    '''
     return ((yArr-yHatArr)**2).sum()
 
 def corrCoef(y_hat, y):
