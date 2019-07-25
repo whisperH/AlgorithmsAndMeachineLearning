@@ -1,0 +1,15 @@
+index,FALSE,high,mild,overcast,y_label
+0,FALSE,high,hot,sunny,no
+1,TRUE,high,hot,sunny,no
+2,FALSE,high,hot,overcast,yes
+3,FALSE,high,mild,rainy,yes
+4,FALSE,normal,cool,rainy,yes
+5,TRUE,normal,cool,rainy,no
+6,TRUE,normal,cool,overcast,yes
+7,FALSE,high,mild,sunny,no
+8,FALSE,normal,cool,sunny,yes
+9,FALSE,normal,mild,rainy,yes
+10,TRUE,normal,mild,sunny,yes
+11,TRUE,high,mild,overcast,yes
+12,FALSE,normal,hot,overcast,yes
+13,TRUE,high,mild,rainy,no
