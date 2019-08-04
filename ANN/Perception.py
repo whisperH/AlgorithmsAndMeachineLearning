@@ -9,6 +9,7 @@ class Perception(object):
         :param lr: <float>学习率
         '''
         self.input_vecs = input_vecs
+        self.labels = labels
         self.n_features = input_vecs.shape[1]
         self.n_nums = input_vecs.shape[0]
         self.activation = activation
@@ -35,8 +36,7 @@ class Perception(object):
         :param delta: <np.ndarray>误差项
         :return:
         '''
-        delta = np.tile(delta, (self.n_features, 1))
-        delta_weight = np.dot(self.input_vecs[index_nums].T, delta)
+        delta_weight = input_vecs[index_nums].T * delta
         self.weight += delta_weight
 
     def _update_bias(self, delta):
@@ -48,24 +48,23 @@ class Perception(object):
         '''
         self.bias += delta
 
-    def forward(self, nums, labels):
+    def forward(self, nums):
         '''
         前向计算感知机的输出值
         :param nums: 训练样例的数量
         :param input_vecs: 训练样本的特征值
-        :param labels: 训练样本的真实值
         :return:
         '''
         for k in range(nums):
             print('%d th iterations' % k)
             for inums in range(self.n_nums):
-                output = self.predict(input_vecs[inums])
-                delta = self.lr * (labels[inums] - output)
+                output = self.predict(self.input_vecs[inums])
+                delta = self.lr * (self.labels[inums] - output)
                 self._update_weight(inums, delta)
                 self._update_bias(delta)
             # print('weights;', self.weight)
             # print('bias;', self.bias)
-            print('output:', self.predict(input_vecs))
+            print('output:', self.predict(self.input_vecs))
 
 
 class PerceptionDualModel(object):
@@ -168,7 +167,7 @@ class PerceptionDualModel(object):
     def forward(self, nums):
         '''
         前向计算感知机的输出值
-        :param nums: 训练样例的数量
+        :param nums: 迭代次数
         :param input_vecs: 训练样本的特征值
         :param labels: 训练样本的真实值
         :return:
@@ -180,7 +179,10 @@ class PerceptionDualModel(object):
                 delta = self.labels[num_index] - output
                 self._update_weight(delta, num_index)
                 self._update_bias(delta)
-            print(self._predict(input_vecs))
+            print('n;', self.n.T)
+            print('bias;', self.bias)
+            print(self._predict(self.input_vecs))
+            print('===================')
 
 
 
@@ -215,10 +217,10 @@ if __name__ == '__main__':
     input_vecs, labels = getTrainData()
     # ================ 基本模式 ================#
     P = Perception(input_vecs, labels, activation, lr=1)
-    P.forward(10, labels)
+    P.forward(10)
     print(P.predict(np.array([[8, 6]])))
 
     # ================ 对偶模式 ================#
     P = PerceptionDualModel(input_vecs, labels, activation)
-    P.forward(10)
+    P.forward(30)
     print(P._predict(np.array([[8, 6]])))
