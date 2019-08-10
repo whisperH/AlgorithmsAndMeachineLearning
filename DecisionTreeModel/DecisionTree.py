@@ -157,7 +157,7 @@ class DecisionTree(object):
     def predict(self, data, node):
         '''
         对数据进行预测
-        :param test_data: 待预测的数据
+        :param data: 待预测的数据
         :param node: 决策树，若非DecisionTreeNode形式，则说明node是分类标签
         :return: 预测结果
         '''
@@ -300,7 +300,7 @@ class DecisionTree(object):
             # return {self.label_name: {max_label}}
             return max_label
         # 如果待分类的特征为空 或者 检查数据集中的特征种类是否为1（数据集中所有特征都相同）
-        elif len(feature_names) == 0 or dataset.drop_duplicates(subset=feature_names, keep=False).empty:
+        if len(feature_names) == 0 or dataset.drop_duplicates(subset=feature_names, keep=False).empty:
             # 选取当前数据集中最多的标签作为该类标签
             # return {self.label_name: {max_label}}
             return max_label

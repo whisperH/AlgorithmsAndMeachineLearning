@@ -175,7 +175,9 @@ class SVM(object):
         '''
         for iteration in range(self.iterations):
             print('第%d代' % iteration)
+            # 寻找alpha1和alpha2的下标
             index_1, index_2 = self.init_alpha()
+            # 计算alpha的取值范围
             if self.trainY[index_1] == self.trainY[index_2]:
                 L = max(0, self.alpha[index_1]+self.alpha[index_2]-self.penalty)
                 H = min(self.penalty, self.alpha[index_1]+self.alpha[index_2])
@@ -197,6 +199,7 @@ class SVM(object):
                 # print('eta <= 0')
                 continue
 
+            # 更新alpha值
             alpha2_new_unc = self.alpha[index_2] + self.trainY[index_2] * (E1 - E2) / eta
 
             if alpha2_new_unc > H:
@@ -206,10 +209,12 @@ class SVM(object):
             else:
                 alpha2_new = alpha2_new_unc
 
+
             alpha1_new = self.alpha[index_1] + self.trainY[index_1] * self.trainY[index_2] * (
                     self.alpha[index_2] - alpha2_new
             )
 
+            # 更新b值
             b1_new = -E1 - self.trainY[index_1] * self.kernalFunction(
                 self.trainX[index_1], self.trainX[index_1]
             ) * (
