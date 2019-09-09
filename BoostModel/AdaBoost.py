@@ -88,15 +88,7 @@ class AdaBoost(object):
             # 新建一个弱学习器
             # 寻找最优的划分节点
             weaker_learner = self.weaker_learner(ith_estimator, self.column_type)
-            # split_feature_index, best_gini, best_theshold = weaker_learner.getBestFeature(_X, _Y, self.feature_indices)
-            # train_x = _X[:, split_feature_index]
-            # X = np.array([train_x]).T
-            # print('best_theshold', best_theshold)
-            # print('split_feature_index:', split_feature_index)
-            # weaker_learner.column_type = [self.column_type[split_feature_index]]
-
             weaker_learner.fit(_X, _Y)
-            print(weaker_learner.__root__.feature_index)
 
             weaker_learner_result = weaker_learner.predict(_X)
 

@@ -11,7 +11,7 @@ def DistMinkov(xi, xj, p=2):
     x = xi - xj
     data = np.apply_along_axis(np.power, 0, x, p)
     sum_data = np.sum(data)
-    return pow(sum_data, p)
+    return pow(sum_data, 1/p)
 
 def DistVDM(xi, xj):
     pass
